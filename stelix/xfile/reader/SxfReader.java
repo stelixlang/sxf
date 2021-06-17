@@ -65,7 +65,6 @@ public class SxfReader {
         } else if (object.children.get(0) instanceof SxfParser.Array_objectContext) {
             return getArrayBlock((SxfParser.Array_objectContext) object.children.get(0));
         }
-        System.out.println(object.children.get(0).getClass());
 
         return null;
     }
