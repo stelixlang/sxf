@@ -4,19 +4,17 @@ import stelix.xfile.ISxfBlock;
 import stelix.xfile.SxfArrayBlock;
 import stelix.xfile.SxfDataBlock;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 
 public class SxfFile {
 
-    private HashMap<String, ISxfBlock> blocks = new HashMap<>();
+    private LinkedHashMap<String, ISxfBlock> blocks = new LinkedHashMap<>();
 
     public <X> X get(String name) {
         return (X) blocks.getOrDefault(name, null);
     }
 
-    public HashMap<String, ISxfBlock> blocks() {
+    public LinkedHashMap<String, ISxfBlock> blocks() {
         return blocks;
     }
 

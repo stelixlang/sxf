@@ -2,11 +2,13 @@ package stelix.xfile;
 
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.TreeMap;
 
 public class SxfDataBlock implements ISxfBlock {
 
-    private HashMap<String, ISxfBlock> blocks = new HashMap<>();
-    private HashMap<String, Object> variables = new HashMap<>();
+    private LinkedHashMap<String, ISxfBlock> blocks = new LinkedHashMap<>();
+    private LinkedHashMap<String, Object> variables = new LinkedHashMap<>();
 
 
     public <X> X block(String name) {
@@ -25,11 +27,11 @@ public class SxfDataBlock implements ISxfBlock {
         return variables.containsKey(name);
     }
 
-    public HashMap<String, Object> variables() {
+    public LinkedHashMap<String, Object> variables() {
         return variables;
     }
 
-    public HashMap<String, ISxfBlock> blocks() {
+    public LinkedHashMap<String, ISxfBlock> blocks() {
         return blocks;
     }
 

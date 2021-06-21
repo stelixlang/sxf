@@ -17,7 +17,7 @@ import java.nio.charset.StandardCharsets;
 
 public class SxfReader {
 
-    public SxfFile read(File file) {
+    public static SxfFile readFile(File file) {
         StringBuilder sb = new StringBuilder(512);
         try {
             Reader r = new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8);
@@ -30,7 +30,7 @@ public class SxfReader {
             return null;
         }
         try {
-            return read(sb.toString());
+            return readRaw(sb.toString());
         } catch (Exception ex) {
             ex.printStackTrace();
             return null;
@@ -38,7 +38,7 @@ public class SxfReader {
     }
 
 
-    public SxfFile read(String data)  {
+    public static SxfFile readRaw(String data)  {
         ANTLRInputStream inputStream = new org.antlr.v4.runtime.ANTLRInputStream(data);
         SxfLexer speakLexer = new SxfLexer(inputStream);
         CommonTokenStream commonTokenStream = new CommonTokenStream(speakLexer);
@@ -59,7 +59,7 @@ public class SxfReader {
     }
 
 
-    public Tuple<String, ISxfBlock> getBlock(SxfParser.ObjectContext object) {
+    protected static Tuple<String, ISxfBlock> getBlock(SxfParser.ObjectContext object) {
         if (object.children.get(0) instanceof SxfParser.Data_objectContext) {
             return getDataObject((SxfParser.Data_objectContext) object.children.get(0));
         } else if (object.children.get(0) instanceof SxfParser.Array_objectContext) {
@@ -69,7 +69,7 @@ public class SxfReader {
         return null;
     }
 
-    private Tuple<String, ISxfBlock> getDataObject(SxfParser.Data_objectContext dataObjectContext) {
+    protected static Tuple<String, ISxfBlock> getDataObject(SxfParser.Data_objectContext dataObjectContext) {
         String identifier = clearText(dataObjectContext.identifier().getText());
 
         SxfParser.Data_blockContext dataBlockContext = dataObjectContext.data_block();
@@ -77,7 +77,7 @@ public class SxfReader {
         return new Tuple<>(identifier, getDataBlock(dataBlockContext));
     }
 
-    public ISxfBlock getDataBlock(SxfParser.Data_blockContext dataBlockContext) {
+    protected static ISxfBlock getDataBlock(SxfParser.Data_blockContext dataBlockContext) {
         SxfDataBlock dataBlock = new SxfDataBlock();
         for (SxfParser.Data_block_elementContext element : dataBlockContext.data_block_elemenets().data_block_element()) {
             if (element.children.get(0) instanceof SxfParser.VariableContext) {
@@ -97,7 +97,7 @@ public class SxfReader {
     }
 
 
-    private Tuple<String, ISxfBlock> getArrayBlock(SxfParser.Array_objectContext arrayContext) {
+    protected static Tuple<String, ISxfBlock> getArrayBlock(SxfParser.Array_objectContext arrayContext) {
         SxfArrayBlock arrayBlock = new SxfArrayBlock();
         String identifier = clearText(arrayContext.identifier().getText());
 
@@ -117,7 +117,7 @@ public class SxfReader {
 
 
 
-    private Object varValue(ParseTree rawValue)
+    protected static Object varValue(ParseTree rawValue)
     {
         if (rawValue instanceof SxfParser.S_stringContext)
         {

@@ -17,23 +17,35 @@ public class SxfWriter {
         this.elementWriteType = ElementWriteType.INLINE;
     }
 
-    public void write(SxfFile objFile, File file) {
+    public void writeFile(SxfFile objFile, File file) {
+        try {
+          if (file.exists())
+              file.delete();
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
         try (Writer writer = new BufferedWriter(new OutputStreamWriter(
                 new FileOutputStream(file), StandardCharsets.UTF_8))) {
-            writer.write(write(objFile));
+            writer.write(writeToString(objFile));
             writer.flush();
         } catch (Exception ex) {
             ex.printStackTrace();
         }
     }
 
-    public String write(SxfFile file) {
+    public String writeToString(SxfFile file) {
         StringBuilder stringBuilder = new StringBuilder();
 
         int currentBlockIndex = 0;
         int maxBlockIndex = file.blocks().entrySet().size();
         for (Map.Entry<String, ISxfBlock> block : file.blocks().entrySet()) {
-            stringBuilder.append(fixName(block.getKey())).append(" => ");
+
+            stringBuilder.append(fixName(block.getKey()));
+            if (block.getValue() instanceof SxfArrayBlock) {
+                stringBuilder.append("[]");
+            }
+            stringBuilder.append(" => ");
+
             stringBuilder.append(writeBlock(block.getValue(), 0));
 
             if (++currentBlockIndex < maxBlockIndex) {
@@ -52,6 +64,7 @@ public class SxfWriter {
         if (block instanceof SxfDataBlock) {
             return writeDataBlock((SxfDataBlock)block, tabCount);
         } else if (block instanceof SxfArrayBlock) {
+
             return writeArrayBlock((SxfArrayBlock)block, tabCount);
         }
         return "";
@@ -59,6 +72,7 @@ public class SxfWriter {
 
     private String writeArrayBlock(SxfArrayBlock arrayBlock, int tabCount) {
         StringBuilder stringBuilder = new StringBuilder();
+
         stringBuilder.append(tabCount % 2 == 0 ? "{" : "(");
         if (writeType == WriteType.MULTI_LINE) {
             stringBuilder.append(System.lineSeparator());
@@ -185,11 +199,23 @@ public class SxfWriter {
             if (writeType == WriteType.MULTI_LINE) {
                 putTab(stringBuilder, tabCount + 1);
             }
-            if (block instanceof SxfArrayBlock) {
+
+            stringBuilder.append(fixName(block.getKey()));
+            if (block.getValue() instanceof SxfArrayBlock) {
                 stringBuilder.append("[]");
             }
-            stringBuilder.append(fixName(block.getKey())).append(" => ");
+
+            stringBuilder.append(" => ");
             stringBuilder.append(writeBlock(block.getValue(), tabCount + 1));
+
+            if (++currentBlockIndex < maxBlockIndex) {
+                stringBuilder.append(",");
+                if (writeType == WriteType.MULTI_LINE) {
+                    stringBuilder.append(System.lineSeparator());
+                }
+            }
+
+
         }
         if (writeType == WriteType.MULTI_LINE) {
             stringBuilder.append(System.lineSeparator());
