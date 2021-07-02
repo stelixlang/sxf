@@ -1,4 +1,4 @@
 # sxf
 Stelix Object File<br>
 Documentation: Soon <br>
-Thanks @ghost2173 for syntax
+Thanks <a href="http://github.com/@ghost2173">ghost2173</a> for syntax
