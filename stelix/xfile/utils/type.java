@@ -1,5 +1,6 @@
 package stelix.xfile.utils;
 
+/* TAKEN FROM MEOWLIB */
 public class type {
 
     public static boolean is_type(Object object, Class<?> ... types) {
@@ -9,6 +10,24 @@ public class type {
             }
         }
         return true;
+    }
+
+    public static boolean is_type_or(Object object, Class<?> ... types) {
+        for (Class<?> type : types) {
+            if (type.isInstance(object)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static boolean is_class_type_or(Class<?> object, Class<?> ... types) {
+        for (Class<?> type : types) {
+            if (type == object) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public static <X> X cast(Object object) {

@@ -1,19 +1,27 @@
 package stelix.xfile.reader;
 
-import org.antlr.v4.runtime.ANTLRInputStream;
-import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.*;
+import org.antlr.v4.runtime.atn.PredictionMode;
 import org.antlr.v4.runtime.tree.ParseTree;
 import stelix.xfile.ISxfBlock;
 import stelix.xfile.SxfArrayBlock;
 import stelix.xfile.SxfDataBlock;
 import stelix.xfile.SxfStruct;
 import stelix.xfile.SxfFile;
+import stelix.xfile.attributes.SxfField;
+import stelix.xfile.attributes.SxfObject;
 import stelix.xfile.gen.SxfLexer;
 import stelix.xfile.gen.SxfParser;
 import stelix.xfile.utils.Tuple;
+import stelix.xfile.utils.type;
 
 import java.io.*;
+import java.lang.reflect.Field;
+import java.lang.reflect.ParameterizedType;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
 
 public class SxfReader {
 
@@ -39,11 +47,7 @@ public class SxfReader {
 
 
     public static SxfFile readRaw(String data)  {
-        ANTLRInputStream inputStream = new org.antlr.v4.runtime.ANTLRInputStream(data);
-        SxfLexer speakLexer = new SxfLexer(inputStream);
-        CommonTokenStream commonTokenStream = new CommonTokenStream(speakLexer);
-        SxfParser sxfParser = new SxfParser(commonTokenStream);
-
+        SxfParser sxfParser = new SxfParser(new CommonTokenStream(new SxfLexer(CharStreams.fromString(data))));
 
         SxfFile sxfFile = new SxfFile();
 
@@ -57,6 +61,59 @@ public class SxfReader {
 
         return sxfFile;
     }
+
+    public static <X> X readObject(Class<X> classType, String data) {
+        try {
+            SxfObject sxfObject = classType.getAnnotation(SxfObject.class);
+            SxfFile sxfFile = readRaw(data);
+            return readObject(classType, sxfFile.dataBlock(sxfObject.name()));
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            return null;
+        }
+    }
+
+    private static <X> X readObject(Class<X> classType, SxfDataBlock dataBlock) { ;
+        try {
+            X instance = classType.newInstance();
+            for (Field field : classType.getFields()) {
+                final SxfField sxfField = field.getAnnotation(SxfField.class);
+                final String[] parents = sxfField.name().contains("/") ? sxfField.name().split("/") : null;
+                final String name = parents == null ? sxfField.name() : parents[parents.length - 1];
+                SxfDataBlock currentBlock = dataBlock;
+
+                if (parents != null) {
+                    for (int i = 0; i < parents.length - 1; i++) {
+                        currentBlock = currentBlock.dataBlock(parents[i]);
+                    }
+                }
+                if (field.getType().isPrimitive()) {
+                    field.set(instance,  currentBlock.variable(name));
+                } else {
+                    if (type.is_class_type_or(field.getType(), List.class, ArrayList.class)) {
+
+                        SxfArrayBlock sxfArrayBlock = currentBlock.arrayBlock(name);
+                        Class<?> typeOfElement = (Class<?>) ((ParameterizedType) field.getGenericType()).getActualTypeArguments()[0];
+
+                        ArrayList list = new ArrayList();
+
+
+                        for (SxfStruct sxfStruct : sxfArrayBlock.elements()) {
+                            Object element = readObject(typeOfElement, (SxfDataBlock) sxfStruct.get(0));
+                            list.add(element);
+                        }
+                    }
+                }
+            }
+            return instance;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+
+
 
 
     protected static Tuple<String, ISxfBlock> getBlock(SxfParser.ObjectContext object) {
@@ -174,6 +231,10 @@ public class SxfReader {
         }
 
         return text;
+    }
+
+    private static boolean isPrimitiveType(Class<?> object) {
+        return type.is_class_type_or(object, Boolean.class, Integer.class, Float.class, Double.class, String.class, Short.class, Character.class, Long.class);
     }
 
     private static String clearText(String text)

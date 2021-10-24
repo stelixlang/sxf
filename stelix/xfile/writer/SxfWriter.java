@@ -1,11 +1,15 @@
 package stelix.xfile.writer;
 
 import stelix.xfile.*;
+import stelix.xfile.attributes.SxfField;
+import stelix.xfile.attributes.SxfObject;
+import stelix.xfile.utils.type;
 
 import java.io.*;
+import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 public class SxfWriter {
 
@@ -32,6 +36,167 @@ public class SxfWriter {
             ex.printStackTrace();
         }
     }
+
+    public void writeClassToFile(Object clazz, File file) {
+        SxfFile sxfFile = new SxfFile();
+        SxfDataBlock instanceBlock = new SxfDataBlock();
+        final String name;
+        SxfObject sxfObject = clazz.getClass().getAnnotation(SxfObject.class);
+        if (sxfObject == null || sxfObject.name().equals("empty")) {
+            name = clazz.getClass().getSimpleName();
+        } else {
+            name = sxfObject.name();
+        }
+        fillObject(clazz, instanceBlock);
+        sxfFile.put(name, instanceBlock);
+        writeFile(sxfFile, file);
+    }
+
+    public String writeClass(Object clazz) {
+        SxfFile sxfFile = new SxfFile();
+        SxfDataBlock instanceBlock = new SxfDataBlock();
+        final String name;
+        SxfObject sxfObject = clazz.getClass().getAnnotation(SxfObject.class);
+        if (sxfObject == null || sxfObject.name().equals("empty")) {
+            name = clazz.getClass().getSimpleName();
+        } else {
+            name = sxfObject.name();
+        }
+        fillObject(clazz, instanceBlock);
+        sxfFile.put(name, instanceBlock);
+        return writeToString(sxfFile);
+    }
+
+    public String writeRawClass(Object clazz) {
+        SxfFile sxfFile = new SxfFile();
+        SxfDataBlock instanceBlock = new SxfDataBlock();
+
+        writeObjectRaw(clazz, instanceBlock);
+
+
+        sxfFile.put(clazz.getClass().getSimpleName(), instanceBlock);
+        return writeToString(sxfFile);
+    }
+
+
+
+    private void fillObject(Object clazz, SxfDataBlock instanceBlock) {
+        for (Field field : clazz.getClass().getDeclaredFields()) {
+            try {
+                SxfField sxfField = field.getAnnotation(SxfField.class);
+                if (sxfField != null) {
+                    final String[] parents = sxfField.name().contains("/") ? sxfField.name().split("/") : null;
+                    SxfDataBlock fieldParent = instanceBlock;
+                    if (parents != null) {
+                        for (int i = 0; i < parents.length - 1; i++) {
+
+                            if (!fieldParent.blockExists(parents[i])) {
+                                SxfDataBlock parentBlock = new SxfDataBlock();
+                                fieldParent.putBlock(parents[i], parentBlock);
+                                fieldParent = parentBlock;
+                            } else {
+                                fieldParent = fieldParent.dataBlock(parents[i]);
+                            }
+
+                        }
+                    }
+                    String name = sxfField.name().contains("/") ? parents[parents.length - 1] : sxfField.name();
+
+                    final Object value = field.get(clazz);
+                    if (isPrimitive(value)) {
+                        fieldParent.putVar(name, value);
+                    } else {
+                        if (value instanceof List) {
+                            List<?> list = (List<?>) value;
+                            SxfArrayBlock arrayBlock = new SxfArrayBlock();
+                            for (Object o : list) {
+                                SxfStruct sxfStruct = new SxfStruct();
+                                if (o.getClass().isPrimitive()) {
+                                    sxfStruct.put(o);
+                                } else {
+                                    SxfDataBlock elementInstance = new SxfDataBlock();
+                                    fillObject(o, elementInstance);
+                                    sxfStruct.put(elementInstance);
+                                }
+                                arrayBlock.add(sxfStruct);
+                            }
+
+                            fieldParent.putBlock(name, arrayBlock);
+                            continue;
+                        } else {
+                            SxfDataBlock dataBlock = new SxfDataBlock();
+                            fillObject(value, dataBlock);
+                            final String blockName;
+                            SxfObject sxfObject = value.getClass().getAnnotation(SxfObject.class);
+                            if (sxfObject == null) {
+                                blockName = name;
+                            } else {
+                                blockName = sxfObject.name();
+                            }
+                            fieldParent.putBlock(blockName, dataBlock);
+                        }
+                    }
+
+                }
+            } catch (IllegalAccessException e) {
+
+            }
+        }
+    }
+
+    public String writeRaw(Object clazz) {
+        SxfFile sxfFile = new SxfFile();
+        SxfDataBlock instanceBlock = new SxfDataBlock();
+
+        writeObjectRaw(clazz, instanceBlock);
+
+        sxfFile.put(clazz.getClass().getSimpleName().toLowerCase(), instanceBlock);
+        return writeToString(sxfFile);
+    }
+
+    private void writeObjectRaw(Object clazz, SxfDataBlock instanceBlock) {
+        for (Field field : clazz.getClass().getDeclaredFields()) {
+            try {
+                if (!field.isAccessible()) {
+                    field.setAccessible(true);
+                }
+                Object value = field.get(clazz);
+                if (isPrimitive(value)) {
+                    instanceBlock.putVar(field.getName(), value);
+                } else {
+                    if (value == null) {
+                        instanceBlock.putBlock(field.getType().getSimpleName().toLowerCase(), new SxfDataBlock());
+                        continue;
+                    }
+                    if (value instanceof List) {
+                        List<?> list = (List<?>) value;
+                        SxfArrayBlock arrayBlock = new SxfArrayBlock();
+                        for (Object o : list) {
+                            SxfStruct sxfStruct = new SxfStruct();
+                            if (isPrimitive(o)) {
+                                sxfStruct.put(o);
+                            } else {
+                                SxfDataBlock elementInstance = new SxfDataBlock();
+                                fillObject(o, elementInstance);
+                                sxfStruct.put(elementInstance);
+                            }
+                            arrayBlock.add(sxfStruct);
+                        }
+
+                        instanceBlock.putBlock(field.getName(), arrayBlock);
+                        continue;
+                    }
+
+                    SxfDataBlock innerInstance = new SxfDataBlock();
+                    fillObject(value, innerInstance);
+                    instanceBlock.putBlock(value.getClass().getSimpleName().toLowerCase(), innerInstance);
+                }
+
+            } catch (IllegalAccessException e) { }
+        }
+    }
+
+
 
     public String writeToString(SxfFile file) {
         StringBuilder stringBuilder = new StringBuilder();
@@ -60,7 +225,7 @@ public class SxfWriter {
         return stringBuilder.toString();
     }
 
-    public String writeBlock(ISxfBlock block, int tabCount) {
+    private String writeBlock(ISxfBlock block, int tabCount) {
         if (block instanceof SxfDataBlock) {
             return writeDataBlock((SxfDataBlock)block, tabCount);
         } else if (block instanceof SxfArrayBlock) {
@@ -212,6 +377,7 @@ public class SxfWriter {
                 stringBuilder.append(",");
                 if (writeType == WriteType.MULTI_LINE) {
                     stringBuilder.append(System.lineSeparator());
+                    stringBuilder.append(System.lineSeparator());
                 }
             }
 
@@ -282,6 +448,10 @@ public class SxfWriter {
         }
 
         return text;
+    }
+
+    private boolean isPrimitive(Object object) {
+        return type.is_type_or(object, Boolean.class, Integer.class, Float.class, Double.class, String.class, Short.class, Character.class, Long.class);
     }
 
     public void setElementWriteType(ElementWriteType elementWriteType) {
