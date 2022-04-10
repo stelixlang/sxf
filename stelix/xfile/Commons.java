@@ -8,7 +8,7 @@ public class Commons {
         stringBuilder.append(" ".repeat(Math.max(0, count * 4)));
     }
 
-    private static String[] notSupportedNames = { "false", "true"};
+    private static String[] notSupportedNames = { "false", "true", "null" };
     private static final Pattern validIdentifierPattern = Pattern.compile("[^A-Za-z0-9]");
     public static String writeVar(Object obj) {
         if (obj instanceof String) {

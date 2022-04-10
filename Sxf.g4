@@ -35,7 +35,7 @@ BLOCK_END: '}';
 SEPARATOR: ',';
 SP_START: '[';
 SP_END: ']';
-IDENTIFIER: [A-Za-z0-9]+;
+IDENTIFIER: [A-Za-z0-9_]+;
 string_literal: StringLiteral;
 StringLiteral
   : UnterminatedStringLiteral '"'
