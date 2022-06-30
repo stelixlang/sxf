@@ -5,7 +5,9 @@ import java.util.regex.Pattern;
 public class Commons {
 
     public static void putSpace(StringBuilder stringBuilder, int count) {
-        stringBuilder.append(" ".repeat(Math.max(0, count * 4)));
+        for (int i = 0; i < Math.max(0, count * 4); i++) {
+            stringBuilder.append(" ");
+        }
     }
 
     private static String[] notSupportedNames = { "false", "true", "null" };

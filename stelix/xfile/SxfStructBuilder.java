@@ -74,7 +74,7 @@ public class SxfStructBuilder extends SxfBuildElement {
                     stringBuilder.append(Commons.writeVar(element));
                     if (style == WriteStyle.NORMAL) {
                         if (pack.comment() != null && !pack.comment().isEmpty()) {
-                            stringBuilder.append(" $;").append(pack.comment()).append(" ;$");
+                            stringBuilder.append(" $; ").append(pack.comment()).append(" ;$");
                         }
                     }
                 }

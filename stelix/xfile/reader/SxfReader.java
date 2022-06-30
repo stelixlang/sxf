@@ -29,7 +29,7 @@ public class SxfReader {
 
             if (rawVariable.children.get(0) instanceof SxfParser.Named_basicvarContext) {
                 SxfParser.Named_basicvarContext namedVar = (SxfParser.Named_basicvarContext) rawVariable.children.get(0);
-                String name = Commons.removeQuotes(namedVar.children.get(0).toString());
+                String name = Commons.removeQuotes(namedVar.children.get(0).getText());
                 ParseTree value = namedVar.getChild(2);
                 if (value instanceof SxfParser.BlockContext) {
                     sxfBlock.variables().put(name, readBlock((SxfParser.BlockContext) value));

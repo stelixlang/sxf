@@ -26,8 +26,5 @@ public class SxfTest {
                 .build();
 */
 
-
-        String test = "{ name: \"stelix\", version: 3}";
-        SxfBlock block = SxfReader.toSxf(test);
     }
 }

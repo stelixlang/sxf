@@ -25,7 +25,7 @@ var_false: 'false' | 'FALSE';
 var_true: 'true' | 'TRUE';
 var_null: 'null';
 bool: var_true | var_false;
-INTEGER: [0-9]+;
+INTEGER: '-'? [0-9]+;
 
 
 SET: ':';
@@ -35,7 +35,7 @@ BLOCK_END: '}';
 SEPARATOR: ',';
 SP_START: '[';
 SP_END: ']';
-IDENTIFIER: [A-Za-z0-9_]+;
+IDENTIFIER: [A-Za-z0-9_-]+;
 string_literal: StringLiteral;
 StringLiteral
   : UnterminatedStringLiteral '"'

@@ -6,6 +6,7 @@ import java.util.List;
 
 public class SxfBlockBuilder extends SxfBuildElement {
 
+    protected boolean spaceAfter;
     protected SxfBuildElement owner;
     protected SxfBlockBuilder(SxfBuildElement _owner) {
         owner = _owner;
@@ -65,17 +66,23 @@ public class SxfBlockBuilder extends SxfBuildElement {
 
         Iterator<Object> elementIterator = elements.iterator();
         spaceCount++;
+
+        boolean lastWasBlock = false;
         if (elementIterator.hasNext()) {
             boolean hasNext;
             do {
                 Object element = elementIterator.next();
                 hasNext = elementIterator.hasNext();
                 if (style == WriteStyle.NORMAL) {
+                    if (spaceAfter && lastWasBlock) {
+                        stringBuilder.append(System.lineSeparator());
+                    }
                     stringBuilder.append(System.lineSeparator());
                     Commons.putSpace(stringBuilder, spaceCount);
                 } else {
                     stringBuilder.append(" ");
                 }
+
 
                 if (element instanceof Variable) {
                     Variable variable = ((Variable) element);
@@ -85,12 +92,13 @@ public class SxfBlockBuilder extends SxfBuildElement {
                     if (value instanceof SxfBuildElement) {
                         if (value instanceof SxfBlockBuilder) {
                             if (style == WriteStyle.NORMAL) {
+                                lastWasBlock = true;
                                 if (sxfPack.comment() != null && !sxfPack.comment().isEmpty()) {
                                     stringBuilder.append("$; ").append(sxfPack.comment()).append(" ;$").append(System.lineSeparator());
                                     Commons.putSpace(stringBuilder, spaceCount);
                                 }
                             }
-                            stringBuilder.append(variable.name()).append(" => ");
+                            stringBuilder.append(Commons.clearName(variable.name())).append(" => ");
                             ((SxfBlockBuilder) value).writeObject(spaceCount, stringBuilder);
                         } else if (value instanceof SxfStructBuilder) {
                             if (style == WriteStyle.NORMAL) {
@@ -133,7 +141,6 @@ public class SxfBlockBuilder extends SxfBuildElement {
 
                 }
 
-
                 if (hasNext) {
                     if (style == WriteStyle.INLINE) {
                         stringBuilder.append(", ");
@@ -167,6 +174,11 @@ public class SxfBlockBuilder extends SxfBuildElement {
         return (SxfBlockBuilder) super.setStyle(_style);
     }
 
+
+    public SxfBlockBuilder setSpaceAfter(boolean _spaceAfter) {
+        spaceAfter = _spaceAfter;
+        return this;
+    }
 
     protected <X extends SxfBuildElement> X build() {
         if (owner == null) {
