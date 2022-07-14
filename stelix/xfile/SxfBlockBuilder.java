@@ -62,6 +62,7 @@ public class SxfBlockBuilder extends SxfBuildElement {
     }
 
     public void writeObject(int spaceCount, StringBuilder stringBuilder) {
+        Commons.putSpace(stringBuilder, spaceCount);
         stringBuilder.append("{");
 
         Iterator<Object> elementIterator = elements.iterator();
