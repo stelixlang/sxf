@@ -1,6 +1,7 @@
 # SXF 
   Stelix is a data serialization "langauge" for java.
   
+  # if you are using maven
   # Maven
     `<repository>
 			<id>united-meows</id>
@@ -14,10 +15,6 @@
 			<version>3.0-hotfix</version>
 		</dependency>`
   add this as a dependancy.
- 
-  Any repository recommendation is welcome if its:
-  + easy for braindead monkeys to deploy
-  + isnt strict about its rules (like documentation & sources is required, we are lazy to upload)
   
   # Documentation
     // TODO
